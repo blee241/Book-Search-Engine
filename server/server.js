@@ -1,10 +1,24 @@
 const express = require('express');
+// Import required modules
+const { ApolloServer } = require('apollo-server-express');
+const { authMiddleware } = require('./utils/auth');
+const { typeDefs, resolvers } = require('./schemas');
+
 const path = require('path');
 const db = require('./config/connection');
 const routes = require('./routes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Create instance of ApolloServer
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: authMiddleware,
+});
+// Apply middleware to the Express app
+server.applyMiddleware({ app });
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -16,6 +30,7 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(routes);
 
-db.once('open', () => {
-  app.listen(PORT, () => console.log(`🌍 Now listening on localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server now running on port ${PORT}`);
+  console.log(`Use GraphQL at http://localhost:${PORT}${server.graphqlPath}`);
 });
